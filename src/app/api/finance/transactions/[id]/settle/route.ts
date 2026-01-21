@@ -16,10 +16,10 @@ import { writeAuditLog } from "@/lib/audit";
 const selectMappingRule = async (
   client: Prisma.TransactionClient,
   params: {
-  financialCategoryId: string;
-  financialAccountId: string;
-  supplierId: string;
-  propertyId: string;
+    financialCategoryId: string;
+    financialAccountId: string;
+    supplierId: string;
+    propertyId: string | null;
   },
 ) => {
   const rules = await client.mappingRule.findMany({
