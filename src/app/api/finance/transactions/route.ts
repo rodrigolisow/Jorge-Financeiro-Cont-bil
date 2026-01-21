@@ -28,7 +28,7 @@ const createSchema = z.object({
   accountId: z.string().min(1),
   categoryId: z.string().min(1),
   supplierId: z.string().min(1),
-  propertyId: z.string().min(1),
+  propertyId: z.string().optional().nullable().transform(v => v === "" ? null : v),
 });
 
 export async function GET(request: Request) {
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
         accountId: data.accountId,
         categoryId: data.categoryId,
         supplierId: data.supplierId,
-        propertyId: data.propertyId,
+        propertyId: data.propertyId ?? undefined,
         createdById: user.id,
       },
       include: {

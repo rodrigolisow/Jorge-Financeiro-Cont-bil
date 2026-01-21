@@ -125,7 +125,7 @@ export default function TransactionForm({
         accountId: data.accountId,
         categoryId: data.categoryId,
         supplierId: data.supplierId,
-        propertyId: data.propertyId,
+        propertyId: data.propertyId ?? "",
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar");
@@ -334,12 +334,11 @@ export default function TransactionForm({
             required
           />
           <Select
-            label="Imóvel"
+            label="Imóvel (opcional)"
             value={form.propertyId}
             onChange={e => handleFormChange('propertyId', e.target.value)}
-            options={[{ label: "Selecione...", value: "" }, ...properties.map(p => ({ label: p.name, value: p.id }))]}
+            options={[{ label: "Nenhum", value: "" }, ...properties.map(p => ({ label: p.name, value: p.id }))]}
             disabled={!canEdit}
-            required
           />
 
           {/* Row 3: Description (full width) */}

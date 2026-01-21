@@ -26,7 +26,7 @@ type Transaction = {
   settlementDate: string | null;
   description: string | null;
   supplier: Option;
-  property: Option;
+  property: Option | null;
   account: Option;
   category: Option;
 };
@@ -351,7 +351,9 @@ export default function TransactionsList({ canEdit }: TransactionsListProps) {
                   <TableRow key={item.id} className="group">
                     <TableCell>
                       <div className="font-medium">{item.description || "Sem descrição"}</div>
-                      <div className="text-xs text-muted-foreground">{item.supplier.name} • {item.property.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {item.supplier.name}{item.property ? ` • ${item.property.name}` : ""}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm">{new Date(item.competenceDate).toLocaleDateString()}</TableCell>
                     <TableCell>

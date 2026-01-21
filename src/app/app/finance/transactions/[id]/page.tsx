@@ -3,10 +3,11 @@ import TransactionForm from "@/app/app/finance/transactions/_components/Transact
 import { PageHeader } from "@/components/ui/PageHeader";
 
 type PageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export default async function EditTransactionPage({ params }: PageProps) {
+  const { id } = await params;
   const user = await getOrCreateDbUser();
   const canEdit = user.role === "ADMIN" || user.role === "FINANCE";
 
@@ -14,11 +15,11 @@ export default async function EditTransactionPage({ params }: PageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Editar Lançamento"
-        description={`ID: ${params.id}`}
+        description={`ID: ${id}`}
       />
       <TransactionForm
         mode="edit"
-        transactionId={params.id}
+        transactionId={id}
         canEdit={canEdit}
       />
     </div>

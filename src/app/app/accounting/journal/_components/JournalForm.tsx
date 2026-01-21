@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ArrowLeft, Save, Plus, Trash2, AlertCircle, CheckCircle } from "lucide-react";
+import styles from "./JournalForm.module.css";
 
 type Account = {
   id: string;
@@ -60,7 +66,8 @@ export default function JournalForm({ canEdit }: JournalFormProps) {
   const totals = useMemo(() => {
     const debitTotal = lines.reduce((sum, line) => sum + Number(line.debit || 0), 0);
     const creditTotal = lines.reduce((sum, line) => sum + Number(line.credit || 0), 0);
-    return { debitTotal, creditTotal };
+    const balanced = Math.abs(debitTotal - creditTotal) < 0.01;
+    return { debitTotal, creditTotal, balanced };
   }, [lines]);
 
   const updateLine = (id: string, patch: Partial<Line>) => {
@@ -79,9 +86,7 @@ export default function JournalForm({ canEdit }: JournalFormProps) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canEdit) {
-      return;
-    }
+    if (!canEdit) return;
     setError(null);
     setSuccess(null);
     setSaving(true);
@@ -105,7 +110,7 @@ export default function JournalForm({ canEdit }: JournalFormProps) {
       if (!response.ok) {
         throw new Error(payload?.error?.message ?? "Erro ao salvar");
       }
-      setSuccess("Lançamento salvo.");
+      setSuccess("Lançamento salvo com sucesso!");
       setDate("");
       setDescription("");
       setLines([emptyLine(), emptyLine()]);
@@ -116,142 +121,166 @@ export default function JournalForm({ canEdit }: JournalFormProps) {
     }
   };
 
+  const accountOptions = [
+    { label: "Selecione a conta...", value: "" },
+    ...accounts.map((a) => ({ label: `${a.code} - ${a.name}`, value: a.id })),
+  ];
+
   return (
-    <main style={{ padding: 32 }}>
-      <header style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>Novo lançamento manual</h1>
-        <Link href="/app/accounting/journal">Voltar</Link>
-      </header>
-
-      {!canEdit && <p style={{ marginTop: 8 }}>Acesso somente leitura.</p>}
-      {error && <p style={{ marginTop: 12, color: "crimson" }}>{error}</p>}
-      {success && <p style={{ marginTop: 12, color: "green" }}>{success}</p>}
-
-      <form onSubmit={handleSubmit} style={{ marginTop: 16 }}>
-        <div style={{ display: "grid", gap: 12 }}>
-          <label>
-            <div>Data</div>
-            <input
-              type="date"
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-              disabled={!canEdit}
-            />
-          </label>
-          <label>
-            <div>Descrição</div>
-            <input
-              type="text"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              disabled={!canEdit}
-            />
-          </label>
-        </div>
-
-        <section style={{ marginTop: 16 }}>
-          <h2>Linhas</h2>
-          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-            {lines.map((line, index) => (
-              <div
-                key={line.id}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  padding: 12,
-                }}
-              >
-                <div style={{ display: "grid", gap: 8 }}>
-                  <label>
-                    <div>Conta</div>
-                    <select
-                      value={line.accountId}
-                      onChange={(event) =>
-                        updateLine(line.id, { accountId: event.target.value })
-                      }
-                      disabled={!canEdit}
-                    >
-                      <option value="">Selecione</option>
-                      {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.code} - {account.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <div>Débito</div>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={line.debit}
-                      onChange={(event) =>
-                        updateLine(line.id, {
-                          debit: event.target.value,
-                          credit: event.target.value ? "" : line.credit,
-                        })
-                      }
-                      disabled={!canEdit}
-                    />
-                  </label>
-                  <label>
-                    <div>Crédito</div>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={line.credit}
-                      onChange={(event) =>
-                        updateLine(line.id, {
-                          credit: event.target.value,
-                          debit: event.target.value ? "" : line.debit,
-                        })
-                      }
-                      disabled={!canEdit}
-                    />
-                  </label>
-                  <label>
-                    <div>Memo</div>
-                    <input
-                      type="text"
-                      value={line.memo}
-                      onChange={(event) =>
-                        updateLine(line.id, { memo: event.target.value })
-                      }
-                      disabled={!canEdit}
-                    />
-                  </label>
-                </div>
-                {canEdit && lines.length > 2 && (
-                  <button
-                    type="button"
-                    onClick={() => removeLine(line.id)}
-                    style={{ marginTop: 8 }}
-                  >
-                    Remover linha
-                  </button>
-                )}
-                <div style={{ marginTop: 8 }}>Linha #{index + 1}</div>
-              </div>
-            ))}
+    <div className={styles.container}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <Link href="/app/accounting/journal" className={styles.backLink}>
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <h1 className={styles.title}>Novo Lançamento Contábil</h1>
+            <p className={styles.subtitle}>Partida dobrada manual</p>
           </div>
-          {canEdit && (
-            <button type="button" onClick={addLine} style={{ marginTop: 12 }}>
-              Adicionar linha
-            </button>
-          )}
-        </section>
-
-        <section style={{ marginTop: 16 }}>
-          <strong>Débitos:</strong> {formatCurrency(totals.debitTotal)}{" "}
-          <strong>Créditos:</strong> {formatCurrency(totals.creditTotal)}
-        </section>
-
+        </div>
         {canEdit && (
-          <button type="submit" disabled={saving} style={{ marginTop: 16 }}>
-            {saving ? "Salvando..." : "Salvar lançamento"}
-          </button>
+          <Button type="submit" form="journal-form" variant="primary" isLoading={saving} disabled={!totals.balanced}>
+            <Save size={18} /> Salvar
+          </Button>
         )}
+      </div>
+
+      {/* Alerts */}
+      {error && (
+        <div className={styles.alertError}>
+          <AlertCircle size={18} /> {error}
+        </div>
+      )}
+      {success && (
+        <div className={styles.alertSuccess}>
+          <CheckCircle size={18} /> {success}
+        </div>
+      )}
+
+      {!canEdit && (
+        <div className={styles.alertWarning}>
+          Acesso somente leitura.
+        </div>
+      )}
+
+      {/* Form */}
+      <form id="journal-form" onSubmit={handleSubmit} className={styles.form}>
+        {/* Basic Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados do Lançamento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={styles.formGrid}>
+              <Input
+                label="Data"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                disabled={!canEdit}
+                required
+              />
+              <Input
+                label="Descrição"
+                placeholder="Ex: Pagamento de fornecedor"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={!canEdit}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Lines */}
+        <Card>
+          <CardHeader>
+            <div className={styles.linesHeader}>
+              <CardTitle>Linhas do Lançamento</CardTitle>
+              {canEdit && (
+                <Button type="button" variant="secondary" size="sm" onClick={addLine}>
+                  <Plus size={16} /> Adicionar Linha
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className={styles.linesContainer}>
+              {lines.map((line, index) => (
+                <div key={line.id} className={styles.lineCard}>
+                  <div className={styles.lineNumber}>#{index + 1}</div>
+                  <div className={styles.lineGrid}>
+                    <Select
+                      label="Conta"
+                      value={line.accountId}
+                      onChange={(e) => updateLine(line.id, { accountId: e.target.value })}
+                      options={accountOptions}
+                      disabled={!canEdit}
+                      required
+                    />
+                    <Input
+                      label="Débito (R$)"
+                      type="number"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={line.debit}
+                      onChange={(e) => updateLine(line.id, { debit: e.target.value, credit: e.target.value ? "" : line.credit })}
+                      disabled={!canEdit || !!line.credit}
+                    />
+                    <Input
+                      label="Crédito (R$)"
+                      type="number"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={line.credit}
+                      onChange={(e) => updateLine(line.id, { credit: e.target.value, debit: e.target.value ? "" : line.debit })}
+                      disabled={!canEdit || !!line.debit}
+                    />
+                    <Input
+                      label="Memo"
+                      placeholder="Observação"
+                      value={line.memo}
+                      onChange={(e) => updateLine(line.id, { memo: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  {canEdit && lines.length > 2 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeLine(line.id)}
+                      className={styles.removeButton}
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Totals */}
+        <div className={styles.totalsBar}>
+          <div className={styles.totalItem}>
+            <span className={styles.totalLabel}>Total Débitos:</span>
+            <span className={styles.totalValueDebit}>{formatCurrency(totals.debitTotal)}</span>
+          </div>
+          <div className={styles.totalItem}>
+            <span className={styles.totalLabel}>Total Créditos:</span>
+            <span className={styles.totalValueCredit}>{formatCurrency(totals.creditTotal)}</span>
+          </div>
+          <div className={styles.totalItem}>
+            <span className={styles.totalLabel}>Status:</span>
+            {totals.balanced ? (
+              <span className={styles.balanced}><CheckCircle size={16} /> Balanceado</span>
+            ) : (
+              <span className={styles.unbalanced}><AlertCircle size={16} /> Desbalanceado</span>
+            )}
+          </div>
+        </div>
       </form>
-    </main>
+    </div>
   );
 }

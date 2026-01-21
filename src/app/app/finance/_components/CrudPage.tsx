@@ -59,6 +59,16 @@ const normalizePayload = (data: Record<string, string>, fields: Field[]) =>
     return acc;
   }, {});
 
+// Helper to get display label for select fields
+const getDisplayValue = (field: Field, value: string | null): string => {
+  if (!value) return "—";
+  if (field.type === "select" && field.options) {
+    const option = field.options.find(opt => opt.value === value);
+    return option?.label ?? value;
+  }
+  return value;
+};
+
 export default function CrudPage({
   title,
   description,
@@ -315,7 +325,7 @@ export default function CrudPage({
                     <>
                       {fields.map((field) => (
                         <TableCell key={field.name}>
-                          {item[field.name] ?? <span style={{ color: '#94a3b8' }}>—</span>}
+                          {getDisplayValue(field, item[field.name])}
                         </TableCell>
                       ))}
                       {canEdit && (

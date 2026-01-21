@@ -137,7 +137,7 @@ model FinancialTransaction {
   accountId      String
   categoryId     String
   supplierId     String
-  propertyId     String
+  propertyId     String?
   createdById    String?
   createdAt      DateTime                   @default(now())
   updatedAt      DateTime                   @updatedAt
@@ -145,7 +145,7 @@ model FinancialTransaction {
   account   FinancialAccount @relation(fields: [accountId], references: [id])
   category  FinancialCategory @relation(fields: [categoryId], references: [id])
   supplier  Supplier @relation(fields: [supplierId], references: [id])
-  property  Property @relation(fields: [propertyId], references: [id])
+  property  Property? @relation(fields: [propertyId], references: [id])
   createdBy User? @relation("FinancialTransactionCreatedBy", fields: [createdById], references: [id])
   accountingIssues AccountingIssue[]
 

@@ -23,7 +23,7 @@ export type CreateTransactionInput = {
     accountId: string;
     categoryId: string;
     supplierId: string;
-    propertyId: string;
+    propertyId?: string | null;
 };
 
 export type UpdateTransactionInput = Partial<CreateTransactionInput> & {
@@ -59,7 +59,7 @@ export async function createTransaction(input: CreateTransactionInput, userId: s
             accountId: input.accountId,
             categoryId: input.categoryId,
             supplierId: input.supplierId,
-            propertyId: input.propertyId,
+            propertyId: input.propertyId ?? undefined,
             createdById: userId,
         },
         include: {
