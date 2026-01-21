@@ -20,7 +20,18 @@ import {
   BarChart3,
   Sparkles,
 } from "lucide-react";
+import { getDashboardKPIs } from "@/server/dashboard/kpis";
 import styles from "./dashboard.module.css";
+
+const formatRole = (role: string) => {
+  const map: Record<string, string> = {
+    ADMIN: "Administrador",
+    FINANCE: "Financeiro",
+    ACCOUNTING: "Contabilidade",
+    VIEWER: "Visualizador",
+  };
+  return map[role] || role;
+};
 
 export default async function AppHome() {
   const { userId } = await requireAuth();
@@ -31,6 +42,19 @@ export default async function AppHome() {
 
   const dbUser = await getOrCreateDbUser();
   const role = dbUser.role;
+
+  const kpis = await getDashboardKPIs();
+
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+
+  const formatTrend = (value: number) => {
+    const sign = value > 0 ? "+" : "";
+    return `${sign}${value.toFixed(1)}% este mês`;
+  };
 
   return (
     <div className={styles.dashboard}>
@@ -45,7 +69,7 @@ export default async function AppHome() {
         </div>
         <div className={styles.roleTag}>
           <span className={styles.roleDot}></span>
-          {role}
+          {formatRole(role)}
         </div>
       </div>
 
@@ -56,9 +80,9 @@ export default async function AppHome() {
             <TrendingUp size={24} />
           </div>
           <div className={styles.kpiContent}>
-            <span className={styles.kpiLabel}>Receitas</span>
-            <span className={styles.kpiValue}>R$ 45.230</span>
-            <span className={styles.kpiTrend}>+12% este mês</span>
+            <span className={styles.kpiLabel}>Receitas (Mês)</span>
+            <span className={styles.kpiValue}>{formatMoney(kpis.income.value)}</span>
+            <span className={styles.kpiTrend}>{formatTrend(kpis.income.trend)}</span>
           </div>
         </div>
 
@@ -67,9 +91,9 @@ export default async function AppHome() {
             <TrendingDown size={24} />
           </div>
           <div className={styles.kpiContent}>
-            <span className={styles.kpiLabel}>Despesas</span>
-            <span className={styles.kpiValue}>R$ 32.100</span>
-            <span className={styles.kpiTrend}>-5% este mês</span>
+            <span className={styles.kpiLabel}>Despesas (Mês)</span>
+            <span className={styles.kpiValue}>{formatMoney(kpis.expense.value)}</span>
+            <span className={styles.kpiTrend}>{formatTrend(kpis.expense.trend)}</span>
           </div>
         </div>
 
@@ -78,9 +102,9 @@ export default async function AppHome() {
             <DollarSign size={24} />
           </div>
           <div className={styles.kpiContent}>
-            <span className={styles.kpiLabel}>Saldo</span>
-            <span className={styles.kpiValue}>R$ 13.130</span>
-            <span className={styles.kpiTrend}>Disponível</span>
+            <span className={styles.kpiLabel}>Saldo Total</span>
+            <span className={styles.kpiValue}>{formatMoney(kpis.balance.value)}</span>
+            <span className={styles.kpiTrend}>Acumulado</span>
           </div>
         </div>
 
@@ -89,8 +113,8 @@ export default async function AppHome() {
             <AlertCircle size={24} />
           </div>
           <div className={styles.kpiContent}>
-            <span className={styles.kpiLabel}>Pendências</span>
-            <span className={styles.kpiValue}>3</span>
+            <span className={styles.kpiLabel}>Pendências Contábeis</span>
+            <span className={styles.kpiValue}>{kpis.pendingIssues.count}</span>
             <span className={styles.kpiTrend}>Requer atenção</span>
           </div>
         </div>
