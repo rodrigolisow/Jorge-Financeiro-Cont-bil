@@ -1,0 +1,205 @@
+.layout {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--color-surface);
+}
+
+.sidebar {
+    width: 16rem;
+    /* 64 * 0.25rem = 16rem */
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: var(--color-background);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 40;
+    transition: transform 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+.logoContainer {
+    height: 3.5rem;
+    /* 14 * 0.25rem = 3.5rem */
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--color-foreground);
+    gap: 0.5rem;
+}
+
+.logoAccent {
+    color: var(--color-primary);
+}
+
+.nav {
+    flex: 1;
+    padding: 1.5rem 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.navGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.navGroupTitle {
+    padding: 0 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.navItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    color: #475569;
+    /* Slate 600 - more readable */
+    font-size: 0.9375rem;
+    /* 15px - slightly larger */
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.navItem svg {
+    color: var(--color-primary);
+    /* Cyan icons */
+    flex-shrink: 0;
+}
+
+.navItem:hover {
+    background-color: var(--color-surface);
+    color: var(--color-foreground);
+}
+
+.navItemActive {
+    background-color: rgba(6, 182, 212, 0.1);
+    /* Cyan-500 @ 10% */
+    color: var(--color-primary);
+}
+
+.navItemActive svg {
+    color: var(--color-primary);
+}
+
+.navItemActive:hover {
+    background-color: rgba(6, 182, 212, 0.15);
+    color: var(--color-primary-hover);
+}
+
+.userFooter {
+    padding: 1rem;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mainContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+@media (min-width: 1024px) {
+    .mainContent {
+        margin-left: 16rem;
+    }
+}
+
+.topbar {
+    height: 3.5rem;
+    background-color: var(--color-background);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.topbarLeft {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+}
+
+.breadcrumbActive {
+    color: var(--color-foreground);
+    font-weight: 500;
+}
+
+.menuButton {
+    display: block;
+    padding: 0.5rem;
+    margin: -0.5rem;
+    margin-right: 0.5rem;
+    color: var(--color-muted-foreground);
+    cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+    .menuButton {
+        display: none;
+    }
+}
+
+.pageContent {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 35;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+@media (max-width: 1024px) {
+    .overlay.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}

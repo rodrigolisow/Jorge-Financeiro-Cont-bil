@@ -1,36 +1,24 @@
-# UI, Rotas e Fluxos (MVP)
+# Fluxos e UI (Atualizado)
 
-## Rotas sugeridas
-- `/` landing
-- `/sign-in` / `/sign-up` (Clerk)
-- `/app` (área autenticada)
+## Rotas Principais
 
-## Dentro de /app
-### Financeiro
-- `/app/finance/transactions`
-- `/app/finance/transactions/new`
-- `/app/finance/suppliers`
-- `/app/finance/properties`
-- `/app/finance/accounts`
-- `/app/finance/categories`
+### / (Landing Page - Pública)
+- **Status da UI**: ✅ Implementada (v2)
+- **Objetivo**: Apresentar a solução e converter visitantes.
 
-### Contábil
-- `/app/accounting/issues`
-- `/app/accounting/chart`
-- `/app/accounting/journal`
-- `/app/accounting/journal/new`
-- `/app/accounting/mapping`
+### /app (Dashboard - Protegida)
+- **Status da UI**: ✅ Refatorada (v1 - Prompt 3)
+- **Layout**:
+  - **Sidebar**: Fixa à esquerda (16rem), branca, com navegação agrupada (Financeiro / Contábil). Responsiva (Overlay no mobile).
+  - **Topbar**: Título da seção (Breadcrumb dinâmico) + UserButton à direita.
+  - **Main**: Área de conteúdo com padding (2rem).
+- **Home (/app)**:
+  - Header: Boas vindas + Nível do usuário.
+  - KPIs: Cards simples com métricas (mock para MVP).
+  - Seções: Cards de navegação rápida para Financeiro e Contábil.
+  - **Interação**: Cards possuem hover effect e levam às sub-rotas.
 
-## Layout do dashboard
-- Topbar com UserButton/SignOut (Clerk)
-- Sidebar com navegação por domínio (Financeiro/Contábil)
-- Dashboard `/app` com cards clicáveis para cada módulo
-- CTAs “Novo/Cadastrar” visíveis somente para roles com permissão
-
-## Fluxos
-1) Criar cadastros (fornecedor/imóvel/conta/categoria) com formulário inline
-2) Criar lançamento PLANNED com formulário dedicado
-3) Marcar SETTLED:
-   - gera contábil ou cria pendência
-4) Contábil resolve pendência (mapping) e reprocessa/gera
-5) Contábil cria lançamento manual
+## Padrões de Navegação
+- Sidebar mantém estado ativo visualmente.
+- Breadcrumbs no header ajudam a entender a localização (`Financeiro > Lançamentos`).
+- Design System aplicado a todos os elementos (Fontes, Cores, Radius).

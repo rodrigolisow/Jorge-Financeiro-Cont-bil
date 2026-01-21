@@ -1,0 +1,38 @@
+import React from 'react';
+import styles from './Card.module.css';
+
+export const Card = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div className={`${styles.card} ${className}`} {...props}>
+        {children}
+    </div>
+);
+
+export const CardHeader = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div className={`${styles.header} ${className}`} {...props}>
+        {children}
+    </div>
+);
+
+export const CardTitle = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h3 className={`${styles.title} ${className}`} {...props}>
+        {children}
+    </h3>
+);
+
+export const CardDescription = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
+    <p className={`${styles.description} ${className}`} {...props}>
+        {children}
+    </p>
+);
+
+export const CardContent = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div className={`${styles.content} ${className}`} {...props}>
+        {children}
+    </div>
+);
+
+export const CardFooter = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div className={`${styles.footer} ${className}`} {...props}>
+        {children}
+    </div>
+);

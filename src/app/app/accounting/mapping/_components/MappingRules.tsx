@@ -2,6 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Loader2, Plus, Edit2, Trash2, ArrowLeft, GitMerge } from "lucide-react";
 
 type Option = {
   id: string;
@@ -36,6 +44,7 @@ export default function MappingRules({ canEdit }: MappingRulesProps) {
   const [chartAccounts, setChartAccounts] = useState<AccountOption[]>([]);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
   const [form, setForm] = useState({
     financialCategoryId: "",
     financialAccountId: "",
@@ -44,6 +53,7 @@ export default function MappingRules({ canEdit }: MappingRulesProps) {
     debitAccountId: "",
     creditAccountId: "",
   });
+
   const [editForm, setEditForm] = useState({
     financialCategoryId: "",
     financialAccountId: "",
@@ -112,9 +122,7 @@ export default function MappingRules({ canEdit }: MappingRulesProps) {
 
   const handleCreate = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canEdit) {
-      return;
-    }
+    if (!canEdit) return;
     setSaving(true);
     setError(null);
     try {
@@ -150,9 +158,7 @@ export default function MappingRules({ canEdit }: MappingRulesProps) {
 
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!editingId) {
-      return;
-    }
+    if (!editingId) return;
     setSaving(true);
     setError(null);
     try {
@@ -179,6 +185,7 @@ export default function MappingRules({ canEdit }: MappingRulesProps) {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta regra?")) return;
     setSaving(true);
     setError(null);
     try {
@@ -211,338 +218,194 @@ export default function MappingRules({ canEdit }: MappingRulesProps) {
   const formatAccount = (account: AccountOption) =>
     `${account.code} - ${account.name}`;
 
+  const startEditing = (rule: MappingRule) => {
+    setEditingId(rule.id);
+    setEditForm({
+      financialCategoryId: rule.financialCategory.id,
+      financialAccountId: rule.financialAccount.id,
+      supplierId: rule.supplier?.id ?? "",
+      propertyId: rule.property?.id ?? "",
+      debitAccountId: rule.debitAccount.id,
+      creditAccountId: rule.creditAccount.id,
+    });
+    setCreating(false);
+  };
+
   return (
-    <main style={{ padding: 32 }}>
-      <header style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>Regras de mapeamento</h1>
-        <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/app/accounting/issues">Pendências</Link>
-          {canEdit && (
-            <button type="button" onClick={() => setCreating((prev) => !prev)}>
-              {creating ? "Fechar" : "Nova regra"}
-            </button>
-          )}
-        </div>
-      </header>
-
-      {!canEdit && <p style={{ marginTop: 8 }}>Acesso somente leitura.</p>}
-      {error && <p style={{ marginTop: 12, color: "crimson" }}>{error}</p>}
-
-      {creating && canEdit && (
-        <form onSubmit={handleCreate} style={{ marginTop: 16 }}>
-          <h2>Nova regra</h2>
-          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-            <label>
-              <div>Categoria financeira</div>
-              <select
-                value={form.financialCategoryId}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    financialCategoryId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Selecione</option>
-                {selectOptions.categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <div>Conta financeira</div>
-              <select
-                value={form.financialAccountId}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    financialAccountId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Selecione</option>
-                {selectOptions.accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <div>Fornecedor (opcional)</div>
-              <select
-                value={form.supplierId}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    supplierId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Todos</option>
-                {selectOptions.suppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <div>Imóvel (opcional)</div>
-              <select
-                value={form.propertyId}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    propertyId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Todos</option>
-                {selectOptions.properties.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <div>Conta débito</div>
-              <select
-                value={form.debitAccountId}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    debitAccountId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Selecione</option>
-                {selectOptions.chartAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {formatAccount(account)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <div>Conta crédito</div>
-              <select
-                value={form.creditAccountId}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    creditAccountId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Selecione</option>
-                {selectOptions.chartAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {formatAccount(account)}
-                  </option>
-                ))}
-              </select>
-            </label>
+    <div className="container mx-auto py-8 space-y-8">
+      <PageHeader
+        title="Regras de Mapeamento"
+        description="Automatize a contabilidade associando transações financeiras a contas contábeis."
+        action={
+          <div className="flex gap-3">
+            <Link href="/app/accounting/issues">
+              <Button variant="secondary">Ver Pendências</Button>
+            </Link>
+            {canEdit && (
+              <Button onClick={() => {
+                setCreating(!creating);
+                setEditingId(null);
+              }}>
+                {creating ? <><ArrowLeft className="mr-2 h-4 w-4" /> Cancelar</> : <><Plus className="mr-2 h-4 w-4" /> Nova Regra</>}
+              </Button>
+            )}
           </div>
-          <button type="submit" disabled={saving} style={{ marginTop: 12 }}>
-            Salvar
-          </button>
-        </form>
+        }
+      />
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-md border border-red-200">
+          {error}
+        </div>
       )}
 
-      <section style={{ marginTop: 24 }}>
+      {(creating || editingId) && canEdit && (
+        <Card className="mb-6 border-cyan-100 shadow-sm">
+          <CardHeader>
+            <CardTitle>{editingId ? "Editar Regra" : "Nova Regra"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={editingId ? handleUpdate : handleCreate} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4 border-r pr-4">
+                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Origem (Financeiro)</h4>
+                  <Select
+                    label="Categoria Financeira"
+                    value={editingId ? editForm.financialCategoryId : form.financialCategoryId}
+                    onChange={(e) => editingId ? setEditForm(prev => ({ ...prev, financialCategoryId: e.target.value })) : setForm(prev => ({ ...prev, financialCategoryId: e.target.value }))}
+                    options={[{ label: "Selecione", value: "" }, ...selectOptions.categories.map(c => ({ label: c.name, value: c.id }))]}
+                    required
+                  />
+                  <Select
+                    label="Conta Financeira"
+                    value={editingId ? editForm.financialAccountId : form.financialAccountId}
+                    onChange={(e) => editingId ? setEditForm(prev => ({ ...prev, financialAccountId: e.target.value })) : setForm(prev => ({ ...prev, financialAccountId: e.target.value }))}
+                    options={[{ label: "Selecione", value: "" }, ...selectOptions.accounts.map(c => ({ label: c.name, value: c.id }))]}
+                    required
+                  />
+                  <Select
+                    label="Fornecedor (Opicional)"
+                    value={editingId ? editForm.supplierId : form.supplierId}
+                    onChange={(e) => editingId ? setEditForm(prev => ({ ...prev, supplierId: e.target.value })) : setForm(prev => ({ ...prev, supplierId: e.target.value }))}
+                    options={[{ label: "Todos", value: "" }, ...selectOptions.suppliers.map(c => ({ label: c.name, value: c.id }))]}
+                  />
+                  <Select
+                    label="Imóvel (Opicional)"
+                    value={editingId ? editForm.propertyId : form.propertyId}
+                    onChange={(e) => editingId ? setEditForm(prev => ({ ...prev, propertyId: e.target.value })) : setForm(prev => ({ ...prev, propertyId: e.target.value }))}
+                    options={[{ label: "Todos", value: "" }, ...selectOptions.properties.map(c => ({ label: c.name, value: c.id }))]}
+                  />
+                </div>
+                <div className="space-y-4 pl-4">
+                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Destino (Contábil)</h4>
+                  <Select
+                    label="Conta Débito"
+                    value={editingId ? editForm.debitAccountId : form.debitAccountId}
+                    onChange={(e) => editingId ? setEditForm(prev => ({ ...prev, debitAccountId: e.target.value })) : setForm(prev => ({ ...prev, debitAccountId: e.target.value }))}
+                    options={[{ label: "Selecione", value: "" }, ...selectOptions.chartAccounts.map(c => ({ label: formatAccount(c), value: c.id }))]}
+                    required
+                  />
+                  <Select
+                    label="Conta Crédito"
+                    value={editingId ? editForm.creditAccountId : form.creditAccountId}
+                    onChange={(e) => editingId ? setEditForm(prev => ({ ...prev, creditAccountId: e.target.value })) : setForm(prev => ({ ...prev, creditAccountId: e.target.value }))}
+                    options={[{ label: "Selecione", value: "" }, ...selectOptions.chartAccounts.map(c => ({ label: formatAccount(c), value: c.id }))]}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t mt-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setCreating(false);
+                    setEditingId(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" isLoading={saving}>
+                  {editingId ? "Salvar Alterações" : "Criar Regra"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
         {loading ? (
-          <p>Carregando...</p>
+          <div className="flex justify-center items-center p-12 text-muted-foreground">
+            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            Carregando regras...
+          </div>
         ) : rules.length === 0 ? (
-          <p>Nenhuma regra cadastrada.</p>
+          <EmptyState
+            title="Nenhuma regra de mapeamento"
+            description="Crie regras para automatizar a geração de lançamentos contábeis a partir do financeiro."
+            icon={GitMerge}
+            action={canEdit ? (
+              <Button onClick={() => setCreating(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Criar Primeira Regra
+              </Button>
+            ) : undefined}
+          />
         ) : (
-          <ul style={{ display: "grid", gap: 16, listStyle: "none" }}>
-            {rules.map((rule) => (
-              <li
-                key={rule.id}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  padding: 16,
-                }}
-              >
-                {editingId === rule.id ? (
-                  <form onSubmit={handleUpdate}>
-                    <div style={{ display: "grid", gap: 12 }}>
-                      <label>
-                        <div>Categoria financeira</div>
-                        <select
-                          value={editForm.financialCategoryId}
-                          onChange={(event) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              financialCategoryId: event.target.value,
-                            }))
-                          }
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Origem (Financeiro)</TableHead>
+                <TableHead>Condições Adicionais</TableHead>
+                <TableHead>Destino (Contábil)</TableHead>
+                {canEdit && <TableHead className="text-right">Ações</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rules.map((rule) => (
+                <TableRow key={rule.id}>
+                  <TableCell>
+                    <div className="text-sm font-medium">{rule.financialCategory.name}</div>
+                    <div className="text-xs text-muted-foreground">{rule.financialAccount.name}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">Fornecedor: <span className="font-medium">{rule.supplier?.name ?? "Todos"}</span></div>
+                    <div className="text-sm">Imóvel: <span className="font-medium">{rule.property?.name ?? "Todos"}</span></div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-mono text-emerald-600">D: {formatAccount(rule.debitAccount)}</div>
+                    <div className="text-sm font-mono text-amber-600">C: {formatAccount(rule.creditAccount)}</div>
+                  </TableCell>
+                  {canEdit && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing(rule)}
+                          title="Editar"
                         >
-                          <option value="">Selecione</option>
-                          {selectOptions.categories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <div>Conta financeira</div>
-                        <select
-                          value={editForm.financialAccountId}
-                          onChange={(event) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              financialAccountId: event.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">Selecione</option>
-                          {selectOptions.accounts.map((account) => (
-                            <option key={account.id} value={account.id}>
-                              {account.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <div>Fornecedor (opcional)</div>
-                        <select
-                          value={editForm.supplierId}
-                          onChange={(event) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              supplierId: event.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">Todos</option>
-                          {selectOptions.suppliers.map((supplier) => (
-                            <option key={supplier.id} value={supplier.id}>
-                              {supplier.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <div>Imóvel (opcional)</div>
-                        <select
-                          value={editForm.propertyId}
-                          onChange={(event) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              propertyId: event.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">Todos</option>
-                          {selectOptions.properties.map((property) => (
-                            <option key={property.id} value={property.id}>
-                              {property.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <div>Conta débito</div>
-                        <select
-                          value={editForm.debitAccountId}
-                          onChange={(event) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              debitAccountId: event.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">Selecione</option>
-                          {selectOptions.chartAccounts.map((account) => (
-                            <option key={account.id} value={account.id}>
-                              {formatAccount(account)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <div>Conta crédito</div>
-                        <select
-                          value={editForm.creditAccountId}
-                          onChange={(event) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              creditAccountId: event.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">Selecione</option>
-                          {selectOptions.chartAccounts.map((account) => (
-                            <option key={account.id} value={account.id}>
-                              {formatAccount(account)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                    <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-                      <button type="submit" disabled={saving}>
-                        Atualizar
-                      </button>
-                      <button type="button" onClick={() => setEditingId(null)}>
-                        Cancelar
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div>
-                    <strong>
-                      {rule.financialCategory.name} / {rule.financialAccount.name}
-                    </strong>
-                    <div>
-                      Fornecedor: {rule.supplier?.name ?? "Todos"} | Imóvel:{" "}
-                      {rule.property?.name ?? "Todos"}
-                    </div>
-                    <div>
-                      Débito: {formatAccount(rule.debitAccount)} | Crédito:{" "}
-                      {formatAccount(rule.creditAccount)}
-                    </div>
-                    {canEdit && (
-                      <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingId(rule.id);
-                            setEditForm({
-                              financialCategoryId: rule.financialCategory.id,
-                              financialAccountId: rule.financialAccount.id,
-                              supplierId: rule.supplier?.id ?? "",
-                              propertyId: rule.property?.id ?? "",
-                              debitAccountId: rule.debitAccount.id,
-                              creditAccountId: rule.creditAccount.id,
-                            });
-                          }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
                           onClick={() => handleDelete(rule.id)}
-                          disabled={saving}
+                          title="Excluir"
                         >
-                          Remover
-                        </button>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
-      </section>
-    </main>
+      </Card>
+
+    </div>
   );
 }

@@ -1,0 +1,64 @@
+.card {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    /* Subtle shadow */
+    overflow: hidden;
+}
+
+.header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-foreground);
+}
+
+.description {
+    font-size: 0.875rem;
+    color: var(--color-muted);
+    margin-top: 0.25rem;
+}
+
+.content {
+    padding: 1.5rem;
+}
+
+.footer {
+    padding: 1.5rem;
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+}
+
+/* PageHeader Styles */
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.pageTitleGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.pageTitle {
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--color-foreground);
+}
+
+.pageDescription {
+    font-size: 1rem;
+    color: var(--color-muted);
+}

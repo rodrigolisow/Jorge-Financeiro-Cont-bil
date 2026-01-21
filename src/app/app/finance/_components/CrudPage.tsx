@@ -2,6 +2,14 @@
 
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Plus, Pencil, Trash2, X, Save } from "lucide-react";
 
 type Option = {
   label: string;
@@ -109,11 +117,11 @@ export default function CrudPage({
       }
       setFormData(buildEmptyForm(fields));
       await loadItems();
+      setCreating(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
       setSaving(false);
-      setCreating(false);
     }
   };
 
@@ -155,6 +163,8 @@ export default function CrudPage({
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Tem certeza que deseja remover este item?")) return;
+
     setSaving(true);
     setError(null);
     try {
@@ -174,178 +184,195 @@ export default function CrudPage({
   };
 
   return (
-    <main style={{ padding: 32, display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>{title}</h1>
-        {canEdit && (
-          <button type="button" onClick={() => setCreating((prev) => !prev)}>
-            {creating ? "Fechar" : "Novo"}
-          </button>
-        )}
-      </div>
-
-      {!canEdit && (
-        <p style={{ marginTop: 8 }}>Acesso somente leitura.</p>
-      )}
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={title}
+        description={`Gerenciamento de ${title.toLowerCase()}`}
+        action={
+          canEdit && !creating && (
+            <Button onClick={() => setCreating(true)}>
+              <Plus size={16} className="mr-2" /> Novo
+            </Button>
+          )
+        }
+      />
 
       {error && (
-        <p style={{ marginTop: 12, color: "crimson" }}>{error}</p>
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+          {error}
+        </div>
       )}
 
       {creating && canEdit && (
-        <form onSubmit={handleCreate} style={{ marginTop: 16 }}>
-          <h2>Novo cadastro</h2>
-          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-            {fields.map((field) => (
-              <label key={field.name}>
-                <div>{field.label}</div>
-                {field.type === "select" ? (
-                  <select
-                    value={formData[field.name]}
-                    onChange={(event) =>
-                      handleChange(setFormData, field, event.target.value)
-                    }
-                  >
-                    {field.options?.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={formData[field.name]}
-                    onChange={(event) =>
-                      handleChange(setFormData, field, event.target.value)
-                    }
-                  />
-                )}
-              </label>
-            ))}
-          </div>
-          <button type="submit" disabled={saving} style={{ marginTop: 12 }}>
-            Salvar
-          </button>
-        </form>
-      )}
-
-      <section style={{ marginTop: 24 }}>
-        {loading ? (
-          <p>Carregando...</p>
-        ) : items.length === 0 ? (
-          <p>Nenhum cadastro encontrado.</p>
-        ) : (
-          <ul style={{ display: "grid", gap: 16, listStyle: "none" }}>
-            {items.map((item) => (
-              <li
-                key={item.id}
-                style={{
-                  border: "1px solid #ddd",
-                  padding: 16,
-                  borderRadius: 8,
-                }}
-              >
-                {editingId === item.id ? (
-                  <form onSubmit={handleUpdate}>
-                    <div style={{ display: "grid", gap: 12 }}>
-                      {fields.map((field) => (
-                        <label key={field.name}>
-                          <div>{field.label}</div>
-                          {field.type === "select" ? (
-                            <select
-                              value={editData[field.name] ?? ""}
-                              onChange={(event) =>
-                                handleChange(
-                                  setEditData,
-                                  field,
-                                  event.target.value,
-                                )
-                              }
-                            >
-                              {field.options?.map((option) => (
-                                <option
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              type="text"
-                              value={editData[field.name] ?? ""}
-                              onChange={(event) =>
-                                handleChange(
-                                  setEditData,
-                                  field,
-                                  event.target.value,
-                                )
-                              }
-                            />
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                    <div
-                      style={{
-                        marginTop: 12,
-                        display: "flex",
-                        gap: 8,
-                      }}
-                    >
-                      <button type="submit" disabled={saving}>
-                        Atualizar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingId(null);
-                          setEditData({});
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div>
-                    <div style={{ display: "grid", gap: 6 }}>
-                      {fields.map((field) => (
-                        <div key={field.name}>
-                          <strong>{field.label}:</strong>{" "}
-                          {item[field.name] ?? "-"}
-                        </div>
-                      ))}
-                    </div>
-                    {canEdit && (
-                      <div
-                        style={{
-                          marginTop: 12,
-                          display: "flex",
-                          gap: 8,
-                        }}
-                      >
-                        <button type="button" onClick={() => startEdit(item)}>
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(item.id)}
-                          disabled={saving}
-                        >
-                          Remover
-                        </button>
-                      </div>
+        <Card className="animate-in fade-in slide-in-from-top-4 duration-200">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Novo Cadastro</CardTitle>
+              <Button size="sm" variant="ghost" onClick={() => setCreating(false)}><X size={16} /></Button>
+            </div>
+          </CardHeader>
+          <form onSubmit={handleCreate}>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {fields.map((field) => (
+                  <div key={field.name}>
+                    {field.type === "select" ? (
+                      <Select
+                        label={field.label}
+                        value={formData[field.name]}
+                        onChange={(event) =>
+                          handleChange(setFormData, field, event.target.value)
+                        }
+                        options={field.options}
+                        disabled={saving}
+                      />
+                    ) : (
+                      <Input
+                        label={field.label}
+                        type="text"
+                        value={formData[field.name]}
+                        onChange={(event) =>
+                          handleChange(setFormData, field, event.target.value)
+                        }
+                        disabled={saving}
+                      />
                     )}
                   </div>
-                )}
-              </li>
-            ))}
-          </ul>
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setCreating(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" isLoading={saving}>
+                Salvar
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      )}
+
+      <Card>
+        {loading ? (
+          <div className="p-8 text-center text-muted-foreground">Carregando...</div>
+        ) : items.length === 0 ? (
+          <div className="p-2">
+            <EmptyState
+              title={`Nenhum ${title.toLowerCase().slice(0, -1)} encontrado`}
+              description="Comece criando um novo registro no botão acima."
+              actionLabel={canEdit && !creating ? "Criar Novo" : undefined}
+              onAction={() => setCreating(true)}
+            />
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {fields.map((field) => (
+                  <TableHead key={field.name}>{field.label}</TableHead>
+                ))}
+                {canEdit && <TableHead className="w-[100px] text-right">Ações</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  {editingId === item.id ? (
+                    <>
+                      <TableCell colSpan={fields.length + (canEdit ? 1 : 0)}>
+                        <form onSubmit={handleUpdate} className="flex gap-4 items-end">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                            {fields.map((field) => (
+                              <div key={field.name}>
+                                {field.type === "select" ? (
+                                  <Select
+                                    value={editData[field.name] ?? ""}
+                                    onChange={(event) =>
+                                      handleChange(
+                                        setEditData,
+                                        field,
+                                        event.target.value,
+                                      )
+                                    }
+                                    options={field.options}
+                                    disabled={saving}
+                                  />
+                                ) : (
+                                  <Input
+                                    value={editData[field.name] ?? ""}
+                                    onChange={(event) =>
+                                      handleChange(
+                                        setEditData,
+                                        field,
+                                        event.target.value,
+                                      )
+                                    }
+                                    disabled={saving}
+                                  />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="submit" size="sm" variant="success" isLoading={saving}>
+                              <Save size={16} />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingId(null);
+                                setEditData({});
+                              }}
+                              disabled={saving}
+                            >
+                              <X size={16} />
+                            </Button>
+                          </div>
+                        </form>
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      {fields.map((field) => (
+                        <TableCell key={field.name}>
+                          {item[field.name] ?? <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                      ))}
+                      {canEdit && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => startEdit(item)}
+                              title="Editar"
+                            >
+                              <Pencil size={14} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              onClick={() => handleDelete(item.id)}
+                              disabled={saving}
+                              title="Remover"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
-      </section>
-    </main>
+      </Card>
+    </div>
   );
 }

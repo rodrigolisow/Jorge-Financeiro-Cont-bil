@@ -2,6 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Select } from "@/components/ui/Select";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Loader2, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 
 type Transaction = {
   id: string;
@@ -40,12 +48,30 @@ const formatCurrency = (amount: string) =>
     currency: "BRL",
   }).format(Number(amount));
 
+const formatDate = (isoString: string) => {
+  return new Date(isoString).toLocaleDateString("pt-BR", {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "OPEN": return <Badge variant="destructive">Aberta</Badge>;
+    case "RESOLVED": return <Badge variant="success">Resolvida</Badge>;
+    case "IGNORED": return <Badge variant="secondary">Ignorada</Badge>;
+    default: return <Badge variant="outline">{status}</Badge>;
+  }
+};
+
 export default function IssuesList({ canResolve }: IssuesListProps) {
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("OPEN"); // Default to showing open issues
   const [items, setItems] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -79,11 +105,12 @@ export default function IssuesList({ canResolve }: IssuesListProps) {
     void loadIssues();
   }, [loadIssues]);
 
-  const resolveIssue = async (id: string) => {
-    if (!canResolve) {
-      return;
-    }
+  const resolveIssue = async (id: string, reason: string) => {
+    if (!canResolve) return;
+    if (!confirm(`Tem certeza que deseja resolver esta pendência: "${reason}"?`)) return;
+
     setSaving(true);
+    setResolvingId(id);
     setError(null);
     try {
       const response = await fetch(`/api/accounting/issues/${id}/resolve`, {
@@ -98,113 +125,120 @@ export default function IssuesList({ canResolve }: IssuesListProps) {
       setError(err instanceof Error ? err.message : "Erro ao resolver");
     } finally {
       setSaving(false);
+      setResolvingId(null);
     }
   };
 
   return (
-    <main style={{ padding: 32 }}>
-      <header style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>Pendências contábeis</h1>
-        <div style={{ display: "flex", gap: 12 }}>
-          <Link
-            href="/app/accounting/mapping"
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            Regras de mapeamento
-          </Link>
-          {canResolve && (
-            <Link
-              href="/app/accounting/mapping"
-              style={{
-                padding: "6px 12px",
-                borderRadius: 6,
-                border: "1px solid #222",
-                textDecoration: "none",
-                color: "inherit",
-              }}
-            >
-              Cadastrar regra
+    <div className="container mx-auto py-8 space-y-8">
+      <PageHeader
+        title="Pendências Contábeis"
+        description="Gerencie exceções e pendências de conciliação entre o financeiro e o contábil."
+        action={
+          <div className="flex gap-3">
+            <Link href="/app/accounting/mapping">
+              <Button variant="outline">
+                Ver Regras de Mapeamento <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </Link>
-          )}
+          </div>
+        }
+      />
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-md border border-red-200">
+          {error}
         </div>
-      </header>
+      )}
 
-      {!canResolve && <p style={{ marginTop: 8 }}>Acesso somente leitura.</p>}
-      {error && <p style={{ marginTop: 12, color: "crimson" }}>{error}</p>}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-xs">
+            <Select
+              label="Status da Pendência"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              options={statusOptions}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-      <section style={{ marginTop: 16 }}>
-        <h2>Status</h2>
-        <select
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-          style={{ marginTop: 8 }}
-        >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </section>
-
-      <section style={{ marginTop: 24 }}>
+      <Card>
         {loading ? (
-          <p>Carregando...</p>
+          <div className="flex justify-center items-center p-12 text-muted-foreground">
+            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            Carregando pendências...
+          </div>
         ) : items.length === 0 ? (
-          <p>Nenhuma pendência encontrada.</p>
+          <EmptyState
+            title="Nenhuma pendência encontrada"
+            description="Tudo parece estar em ordem para o filtro selecionado."
+            icon={CheckCircle2}
+          />
         ) : (
-          <ul style={{ display: "grid", gap: 16, listStyle: "none" }}>
-            {items.map((issue) => (
-              <li
-                key={issue.id}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  padding: 16,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div>
-                    <strong>{issue.reason}</strong>
-                    <div>{issue.financialTransaction.supplier.name}</div>
-                    <div>{issue.financialTransaction.property.name}</div>
-                  </div>
-                  <div>{formatCurrency(issue.financialTransaction.amount)}</div>
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <div>Status: {issue.status}</div>
-                  <div>
-                    Competência: {issue.financialTransaction.competenceDate.slice(0, 10)}
-                  </div>
-                  <div>
-                    Conta: {issue.financialTransaction.account.name} | Categoria:{" "}
-                    {issue.financialTransaction.category.name}
-                  </div>
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <div>Aberta em: {issue.createdAt.slice(0, 10)}</div>
-                  <div>
-                    Resolvida em: {issue.resolvedAt ? issue.resolvedAt.slice(0, 10) : "-"}
-                  </div>
-                  <div>
-                    Resolvida por: {issue.resolvedBy?.clerkUserId ?? "-"}
-                  </div>
-                </div>
-                {canResolve && issue.status !== "RESOLVED" && (
-                  <button
-                    type="button"
-                    onClick={() => resolveIssue(issue.id)}
-                    disabled={saving}
-                    style={{ marginTop: 12 }}
-                  >
-                    Marcar como resolvida
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data / Competência</TableHead>
+                <TableHead>Motivo / Detalhes</TableHead>
+                <TableHead>Transação Financeira</TableHead>
+                <TableHead>Valor</TableHead>
+                <TableHead>Status</TableHead>
+                {canResolve && status !== "RESOLVED" && <TableHead className="text-right">Ações</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((issue) => (
+                <TableRow key={issue.id} className="align-top">
+                  <TableCell>
+                    <div className="text-sm font-medium">Criada: {formatDate(issue.createdAt)}</div>
+                    <div className="text-xs text-muted-foreground">Comp: {formatDate(issue.financialTransaction.competenceDate)}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium text-amber-700 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {issue.reason}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {issue.resolvedBy ? `Resolvido por: ${issue.resolvedBy.clerkUserId}` : ""}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <div><span className="font-semibold">{issue.financialTransaction.supplier.name}</span></div>
+                      <div className="text-muted-foreground text-xs">{issue.financialTransaction.category.name}</div>
+                      <div className="text-muted-foreground text-xs">{issue.financialTransaction.account.name}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-mono">
+                    {formatCurrency(issue.financialTransaction.amount)}
+                  </TableCell>
+                  <TableCell>
+                    {getStatusBadge(issue.status)}
+                  </TableCell>
+                  {canResolve && status !== "RESOLVED" && issue.status !== "RESOLVED" && (
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => resolveIssue(issue.id, issue.reason)}
+                        isLoading={resolvingId === issue.id}
+                        disabled={saving}
+                      >
+                        Resolver
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
-      </section>
-    </main>
+      </Card>
+    </div>
   );
 }

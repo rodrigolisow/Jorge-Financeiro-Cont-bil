@@ -1,6 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { ArrowLeft, Save, CheckCircle, Ban, AlertCircle } from "lucide-react";
+import Link from "next/link";
 
 type Option = {
   id: string;
@@ -45,6 +54,7 @@ export default function TransactionForm({
   transactionId,
   canEdit,
 }: TransactionFormProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(mode === "edit");
   const [saving, setSaving] = useState(false);
   const [settling, setSettling] = useState(false);
@@ -173,17 +183,7 @@ export default function TransactionForm({
 
       setSuccess("Salvo com sucesso.");
       if (mode === "create") {
-        setForm((prev) => ({
-          ...prev,
-          amount: "",
-          competenceDate: "",
-          settlementDate: "",
-          description: "",
-          accountId: "",
-          categoryId: "",
-          supplierId: "",
-          propertyId: "",
-        }));
+        router.push("/app/finance/transactions");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar");
@@ -193,6 +193,8 @@ export default function TransactionForm({
   };
 
   const handleSettle = async () => {
+    if (!confirm("Tem certeza que deseja marcar como realizado? Isso pode gerar lançamentos contábeis.")) return;
+
     if (!transactionId || !canEdit) {
       return;
     }
@@ -233,6 +235,8 @@ export default function TransactionForm({
   };
 
   const handleCancel = async () => {
+    if (!confirm("Tem certeza que deseja cancelar este lançamento?")) return;
+
     if (!transactionId || !canEdit) {
       return;
     }
@@ -266,186 +270,193 @@ export default function TransactionForm({
   };
 
   if (loading) {
-    return <p>Carregando...</p>;
+    return <div className="p-12 text-center text-muted-foreground">Carregando dados do lançamento...</div>;
   }
 
+  const handleFormChange = (key: keyof TransactionPayload, value: string) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+  };
+
   return (
-    <form onSubmit={handleSubmit} style={{ marginTop: 16 }}>
-      {!canEdit && <p>Acesso somente leitura.</p>}
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
-      {success && <p style={{ color: "green" }}>{success}</p>}
-      <div style={{ display: "grid", gap: 12 }}>
-        <label>
-          <div>Tipo</div>
-          <select
-            value={form.type}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, type: event.target.value }))
-            }
-            disabled={!canEdit}
-          >
-            {typeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        {mode === "edit" && (
-          <label>
-            <div>Status</div>
-            <select
-              value={form.status}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, status: event.target.value }))
-              }
-              disabled={!canEdit}
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <label>
-          <div>Valor</div>
-          <input
-            type="number"
-            step="0.01"
-            value={form.amount}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, amount: event.target.value }))
-            }
-            disabled={!canEdit}
-          />
-        </label>
-        <label>
-          <div>Competência</div>
-          <input
-            type="date"
-            value={form.competenceDate}
-            onChange={(event) =>
-              setForm((prev) => ({
-                ...prev,
-                competenceDate: event.target.value,
-              }))
-            }
-            disabled={!canEdit}
-          />
-        </label>
-        <label>
-          <div>Liquidação</div>
-          <input
-            type="date"
-            value={form.settlementDate}
-            onChange={(event) =>
-              setForm((prev) => ({
-                ...prev,
-                settlementDate: event.target.value,
-              }))
-            }
-            disabled={!canEdit}
-          />
-        </label>
-        <label>
-          <div>Fornecedor</div>
-          <select
-            value={form.supplierId}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, supplierId: event.target.value }))
-            }
-            disabled={!canEdit}
-          >
-            <option value="">Selecione</option>
-            {suppliers.map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {supplier.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <div>Imóvel</div>
-          <select
-            value={form.propertyId}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, propertyId: event.target.value }))
-            }
-            disabled={!canEdit}
-          >
-            <option value="">Selecione</option>
-            {properties.map((property) => (
-              <option key={property.id} value={property.id}>
-                {property.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <div>Categoria</div>
-          <select
-            value={form.categoryId}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, categoryId: event.target.value }))
-            }
-            disabled={!canEdit}
-          >
-            <option value="">Selecione</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <div>Conta financeira</div>
-          <select
-            value={form.accountId}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, accountId: event.target.value }))
-            }
-            disabled={!canEdit}
-          >
-            <option value="">Selecione</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <div>Descrição</div>
-          <input
-            type="text"
-            value={form.description}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
-            }
-            disabled={!canEdit}
-          />
-        </label>
-      </div>
-      {canEdit && (
-        <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-          <button type="submit" disabled={saving}>
-            {saving ? "Salvando..." : "Salvar"}
-          </button>
-          {mode === "edit" && form.status !== "SETTLED" && form.status !== "CANCELED" && (
-            <button type="button" onClick={handleSettle} disabled={settling}>
-              {settling ? "Liquidando..." : "Marcar como realizado"}
-            </button>
-          )}
-          {mode === "edit" && form.status !== "CANCELED" && (
-            <button type="button" onClick={handleCancel} disabled={canceling}>
-              {canceling ? "Cancelando..." : "Cancelar"}
-            </button>
-          )}
+    <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+      {/* Feedback Banners */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md flex items-center gap-2">
+          <AlertCircle size={18} /> {error}
         </div>
       )}
-    </form>
+      {success && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 px-4 py-3 rounded-md flex items-center gap-2">
+          <CheckCircle size={18} /> {success}
+        </div>
+      )}
+
+      {/* Main Form */}
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Left Column: Main Info */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dados do Lançamento</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select
+                    label="Tipo de Operação"
+                    value={form.type}
+                    onChange={e => handleFormChange('type', e.target.value)}
+                    options={typeOptions}
+                    disabled={!canEdit}
+                    required
+                  />
+                  <Input
+                    label="Valor (R$)"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={form.amount}
+                    onChange={e => handleFormChange('amount', e.target.value)}
+                    disabled={!canEdit}
+                    required
+                  />
+                </div>
+                <Input
+                  label="Descrição"
+                  placeholder="Ex: Pagamento de serviços de TI"
+                  value={form.description}
+                  onChange={e => handleFormChange('description', e.target.value)}
+                  disabled={!canEdit}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Classificação e Vínculos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select
+                    label="Categoria"
+                    value={form.categoryId}
+                    onChange={e => handleFormChange('categoryId', e.target.value)}
+                    options={[{ label: "Selecione...", value: "" }, ...categories.map(c => ({ label: c.name, value: c.id }))]}
+                    disabled={!canEdit}
+                    required
+                  />
+                  <Select
+                    label="Conta Financeira"
+                    value={form.accountId}
+                    onChange={e => handleFormChange('accountId', e.target.value)}
+                    options={[{ label: "Selecione...", value: "" }, ...accounts.map(a => ({ label: a.name, value: a.id }))]}
+                    disabled={!canEdit}
+                    required
+                  />
+                  <Select
+                    label="Fornecedor / Parceiro"
+                    value={form.supplierId}
+                    onChange={e => handleFormChange('supplierId', e.target.value)}
+                    options={[{ label: "Selecione...", value: "" }, ...suppliers.map(s => ({ label: s.name, value: s.id }))]}
+                    disabled={!canEdit}
+                    required
+                  />
+                  <Select
+                    label="Imóvel / Centro de Custo"
+                    value={form.propertyId}
+                    onChange={e => handleFormChange('propertyId', e.target.value)}
+                    options={[{ label: "Selecione...", value: "" }, ...properties.map(p => ({ label: p.name, value: p.id }))]}
+                    disabled={!canEdit}
+                    required
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column: Dates & Status */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Prazos e datas</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input
+                  label="Data de Competência"
+                  type="date"
+                  value={form.competenceDate}
+                  onChange={e => handleFormChange('competenceDate', e.target.value)}
+                  disabled={!canEdit}
+                  required
+                />
+                <Input
+                  label="Data de Liquidação (Prevista/Real)"
+                  type="date"
+                  value={form.settlementDate}
+                  onChange={e => handleFormChange('settlementDate', e.target.value)}
+                  disabled={!canEdit}
+                />
+              </CardContent>
+            </Card>
+
+            {mode === "edit" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status Atual</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Select
+                    label="Situação"
+                    value={form.status}
+                    onChange={e => handleFormChange('status', e.target.value)}
+                    options={statusOptions}
+                    disabled={!canEdit}
+                  />
+                  <div className="pt-2 flex flex-col gap-2">
+                    {form.status !== "SETTLED" && form.status !== "CANCELED" && (
+                      <Button
+                        type="button"
+                        variant="success"
+                        className="w-full justify-center"
+                        onClick={handleSettle}
+                        disabled={settling || !canEdit}
+                      >
+                        <CheckCircle size={16} className="mr-2" />
+                        {settling ? "Processando..." : "Marcar como Realizado"}
+                      </Button>
+                    )}
+                    {form.status !== "CANCELED" && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="w-full justify-center"
+                        onClick={handleCancel}
+                        disabled={canceling || !canEdit}
+                      >
+                        <Ban size={16} className="mr-2" />
+                        {canceling ? "Processando..." : "Cancelar Lançamento"}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* Sticky Footer for Actions */}
+        <div className="mt-8 flex items-center justify-end gap-4 pb-12">
+          <Link href="/app/finance/transactions">
+            <Button type="button" variant="secondary">Cancelar e Voltar</Button>
+          </Link>
+          {canEdit && (
+            <Button type="submit" variant="primary" size="lg" isLoading={saving}>
+              <Save size={18} className="mr-2" /> Salvar Alterações
+            </Button>
+          )}
+        </div>
+      </form>
+    </div>
   );
 }

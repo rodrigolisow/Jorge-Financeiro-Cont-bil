@@ -1,40 +1,41 @@
-import { auth } from "@clerk/nextjs/server";
-import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-
-import styles from "./page.module.css";
+import { auth } from "@clerk/nextjs/server";
+import { Button } from "@/components/ui/Button";
+import styles from "./landing.module.css";
+import { LayoutDashboard } from "lucide-react";
 
 export default async function Home() {
   const { userId } = await auth();
 
-  if (userId) {
-    redirect("/app");
-  }
-
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>Financeiro e Contábil</h1>
-          <p>
-            Faça login com sua conta Clerk para acessar o painel e os módulos
-            financeiros e contábeis.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <Link className={styles.primary} href="/sign-in">
-            Entrar com Clerk
-          </Link>
-        </div>
+    <div className={styles.main}>
+      <header className={styles.header}>
+        <nav className={styles.navbar}>
+          <div className={styles.logo}>
+            <LayoutDashboard size={32} className={styles.logoAccent} />
+            <span>Fluxo<span className={styles.logoAccent}>Ideal</span></span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link href={userId ? "/app" : "/sign-in"}>
+              <Button className={styles.ctaButton}>
+                {userId ? "Ir para Dashboard" : "Entrar"}
+              </Button>
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      <main className={styles.heroWrapper}>
+        {/* Hero Section */}
+        <section className={styles.hero}>
+          <div className="container relative z-10">
+            <h1 className={styles.heroTitle}>
+              Gestão Financeira e Contábil <br />
+              <span className="text-cyan-400">Integrada e Inteligente</span>
+            </h1>
+          </div>
+        </section>
       </main>
     </div>
   );

@@ -1,5 +1,17 @@
 import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
-  return <SignIn />;
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        backgroundColor: "var(--color-surface)",
+      }}
+    >
+      <SignIn />
+    </div>
+  );
 }

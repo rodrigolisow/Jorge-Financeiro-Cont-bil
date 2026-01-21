@@ -2,6 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Plus, Filter, X, ArrowLeft, ArrowRight, CheckCircle, Ban, Search, FileEdit } from "lucide-react";
 
 type Option = {
   id: string;
@@ -47,6 +56,25 @@ const toStartIso = (value: string) =>
 const toEndIso = (value: string) =>
   value ? new Date(`${value}T23:59:59.999Z`).toISOString() : "";
 
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case "PLANNED":
+      return <Badge variant="outline">Previsto</Badge>;
+    case "SETTLED":
+      return <Badge variant="success">Realizado</Badge>;
+    case "CANCELED":
+      return <Badge variant="destructive">Cancelado</Badge>;
+    default:
+      return <Badge variant="secondary">{status}</Badge>;
+  }
+};
+
+const TypeBadge = ({ type }: { type: string }) => {
+  return type === "INCOME" ?
+    <span className="text-emerald-600 font-medium text-sm">Receita</span> :
+    <span className="text-red-600 font-medium text-sm">Despesa</span>;
+}
+
 export default function TransactionsList({ canEdit }: TransactionsListProps) {
   const [filters, setFilters] = useState({
     startDate: "",
@@ -74,6 +102,7 @@ export default function TransactionsList({ canEdit }: TransactionsListProps) {
   const [properties, setProperties] = useState<Option[]>([]);
   const [categories, setCategories] = useState<Option[]>([]);
   const [accounts, setAccounts] = useState<Option[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   const loadOptions = useCallback(async () => {
     const [suppliersRes, propertiesRes, categoriesRes, accountsRes] =
@@ -212,253 +241,198 @@ export default function TransactionsList({ canEdit }: TransactionsListProps) {
     void loadTransactions();
   }, [loadTransactions]);
 
+  const updateFilter = (key: keyof typeof filters, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
   return (
-    <main style={{ padding: 32 }}>
-      <header style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>Lançamentos financeiros</h1>
-        {canEdit && (
-          <Link
-            href="/app/finance/transactions/new"
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "1px solid #222",
-              textDecoration: "none",
-              color: "inherit",
-            }}
-          >
-            Novo lançamento
-          </Link>
-        )}
-      </header>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Lançamentos Financeiros"
+        description="Gestão de receitas e despesas da operação."
+        action={
+          canEdit && (
+            <Link href="/app/finance/transactions/new">
+              <Button variant="primary">
+                <Plus size={16} className="mr-2" /> Novo Lançamento
+              </Button>
+            </Link>
+          )
+        }
+      />
 
-      {!canEdit && <p style={{ marginTop: 8 }}>Acesso somente leitura.</p>}
+      {error && <div className="bg-red-50 text-red-600 p-4 rounded-md">{error}</div>}
 
-      {error && <p style={{ marginTop: 12, color: "crimson" }}>{error}</p>}
+      <div className="flex flex-col gap-4">
+        {/* Actions Bar */}
+        <div className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200">
+          <Button variant="ghost" size="sm" onClick={() => setShowFilters(!showFilters)}>
+            <Filter size={16} className="mr-2" /> Filtros
+          </Button>
 
-      <section style={{ marginTop: 16 }}>
-        <h2>Filtros</h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 12,
-            marginTop: 12,
-          }}
-        >
-          <label>
-            <div>Competência de</div>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  startDate: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label>
-            <div>Competência até</div>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  endDate: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label>
-            <div>Status</div>
-            <select
-              value={filters.status}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  status: event.target.value,
-                }))
-              }
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <div>Fornecedor</div>
-            <select
-              value={filters.supplierId}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  supplierId: event.target.value,
-                }))
-              }
-            >
-              <option value="">Todos</option>
-              {suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <div>Imóvel</div>
-            <select
-              value={filters.propertyId}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  propertyId: event.target.value,
-                }))
-              }
-            >
-              <option value="">Todos</option>
-              {properties.map((property) => (
-                <option key={property.id} value={property.id}>
-                  {property.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <div>Categoria</div>
-            <select
-              value={filters.categoryId}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  categoryId: event.target.value,
-                }))
-              }
-            >
-              <option value="">Todos</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <div>Conta</div>
-            <select
-              value={filters.accountId}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  accountId: event.target.value,
-                }))
-              }
-            >
-              <option value="">Todas</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <section style={{ marginTop: 24 }}>
-        <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
-          <div>Total: {formatCurrency(totals.total)}</div>
-          <div>Receitas: {formatCurrency(totals.income)}</div>
-          <div>Despesas: {formatCurrency(totals.expense)}</div>
-        </div>
-        {loading ? (
-          <p>Carregando...</p>
-        ) : items.length === 0 ? (
-          <p>Nenhum lançamento encontrado.</p>
-        ) : (
-          <ul style={{ display: "grid", gap: 16, listStyle: "none" }}>
-            {items.map((item) => (
-              <li
-                key={item.id}
-                style={{
-                  border: "1px solid #ddd",
-                  padding: 16,
-                  borderRadius: 8,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div>
-                    <strong>{item.supplier.name}</strong>
-                    <div>{item.property.name}</div>
-                  </div>
-                  <div>{formatCurrency(item.amount)}</div>
-                </div>
-                <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
-                  <div>Tipo: {typeLabel(item.type)}</div>
-                  <div>Status: {item.status}</div>
-                  <div>Competência: {item.competenceDate.slice(0, 10)}</div>
-                  <div>
-                    Conta: {item.account.name} | Categoria: {item.category.name}
-                  </div>
-                  <div>Descrição: {item.description ?? "-"}</div>
-                </div>
-                {canEdit && (
-                  <div style={{ marginTop: 12, display: "flex", gap: 12 }}>
-                    <Link href={`/app/finance/transactions/${item.id}`}>
-                      Editar
-                    </Link>
-                    {item.status !== "SETTLED" && item.status !== "CANCELED" && (
-                      <button
-                        type="button"
-                        onClick={() => settleTransaction(item.id)}
-                        disabled={settlingId === item.id}
-                      >
-                        Marcar como realizado
-                      </button>
-                    )}
-                    {item.status !== "CANCELED" && (
-                      <button
-                        type="button"
-                        onClick={() => cancelTransaction(item.id)}
-                        disabled={cancelingId === item.id}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-          <button
-            type="button"
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-            disabled={page === 1 || loading}
-          >
-            Anterior
-          </button>
-          <div>
-            Página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))}
+          <div className="flex gap-4 text-sm font-medium pr-4">
+            <span className="text-muted-foreground">Entradas: <span className="text-emerald-600">{formatCurrency(totals.income)}</span></span>
+            <span className="text-muted-foreground">Saídas: <span className="text-red-600">{formatCurrency(totals.expense)}</span></span>
+            <span className="text-muted-foreground">Total: <span className="text-foreground">{formatCurrency(totals.total)}</span></span>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              setPage((prev) =>
-                prev < Math.ceil(totalCount / pageSize) ? prev + 1 : prev,
-              )
-            }
-            disabled={page >= Math.ceil(totalCount / pageSize) || loading}
-          >
-            Próxima
-          </button>
         </div>
-      </section>
-    </main>
+
+        {/* Filters Panel */}
+        {showFilters && (
+          <Card className="animate-in fade-in slide-in-from-top-2 duration-200">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <Input type="date" label="De" value={filters.startDate} onChange={e => updateFilter('startDate', e.target.value)} />
+                <Input type="date" label="Até" value={filters.endDate} onChange={e => updateFilter('endDate', e.target.value)} />
+                <Select
+                  label="Status"
+                  value={filters.status}
+                  onChange={e => updateFilter('status', e.target.value)}
+                  options={statusOptions}
+                />
+                <Select
+                  label="Fornecedor"
+                  value={filters.supplierId}
+                  onChange={e => updateFilter('supplierId', e.target.value)}
+                  options={[{ label: "Todos", value: "" }, ...suppliers.map(s => ({ label: s.name, value: s.id }))]}
+                />
+                <Select
+                  label="Imóvel"
+                  value={filters.propertyId}
+                  onChange={e => updateFilter('propertyId', e.target.value)}
+                  options={[{ label: "Todos", value: "" }, ...properties.map(s => ({ label: s.name, value: s.id }))]}
+                />
+                <Select
+                  label="Categoria"
+                  value={filters.categoryId}
+                  onChange={e => updateFilter('categoryId', e.target.value)}
+                  options={[{ label: "Todos", value: "" }, ...categories.map(s => ({ label: s.name, value: s.id }))]}
+                />
+                <Select
+                  label="Conta"
+                  value={filters.accountId}
+                  onChange={e => updateFilter('accountId', e.target.value)}
+                  options={[{ label: "Todas", value: "" }, ...accounts.map(s => ({ label: s.name, value: s.id }))]}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <Card>
+        {loading ? (
+          <div className="p-12 text-center text-muted-foreground">Carregando lançamentos...</div>
+        ) : items.length === 0 ? (
+          <div className="p-2">
+            <EmptyState
+              title="Nenhum lançamento encontrado"
+              description="Tente ajustar os filtros ou crie um novo lançamento."
+              actionLabel={canEdit ? "Criar Lançamento" : undefined}
+              onAction={() => window.location.href = '/app/finance/transactions/new'}
+            />
+          </div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Descrição/Entidade</TableHead>
+                  <TableHead>Competência</TableHead>
+                  <TableHead>Categoria/Conta</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Status</TableHead>
+                  {canEdit && <TableHead className="text-right">Ações</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <TableRow key={item.id} className="group">
+                    <TableCell>
+                      <div className="font-medium">{item.description || "Sem descrição"}</div>
+                      <div className="text-xs text-muted-foreground">{item.supplier.name} • {item.property.name}</div>
+                    </TableCell>
+                    <TableCell className="text-sm">{new Date(item.competenceDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">{item.category.name}</div>
+                      <div className="text-xs text-muted-foreground">{item.account.name}</div>
+                    </TableCell>
+                    <TableCell>
+                      <TypeBadge type={item.type} />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatCurrency(item.amount)}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={item.status} />
+                    </TableCell>
+                    {canEdit && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          {item.status !== "SETTLED" && item.status !== "CANCELED" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-emerald-600"
+                              title="Liquidar"
+                              onClick={() => settleTransaction(item.id)}
+                              disabled={settlingId === item.id}
+                            >
+                              <CheckCircle size={16} />
+                            </Button>
+                          )}
+                          <Link href={`/app/finance/transactions/${item.id}`}>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Editar">
+                              <FileEdit size={16} />
+                            </Button>
+                          </Link>
+                          {item.status !== "CANCELED" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-500"
+                              title="Cancelar"
+                              onClick={() => cancelTransaction(item.id)}
+                              disabled={cancelingId === item.id}
+                            >
+                              <Ban size={16} />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <div className="flex items-center justify-between p-4 border-t border-slate-200">
+              <div className="text-sm text-muted-foreground">
+                Página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1 || loading}
+                >
+                  <ArrowLeft size={16} />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page >= Math.ceil(totalCount / pageSize) || loading}
+                >
+                  <ArrowRight size={16} />
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </Card>
+    </div>
   );
 }

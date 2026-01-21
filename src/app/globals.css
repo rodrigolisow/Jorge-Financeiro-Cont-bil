@@ -1,27 +1,38 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Colors - Base */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a; /* Slate 900 */
+  --color-muted: #64748b; /* Slate 500 */
+  --color-muted-foreground: #94a3b8; /* Slate 400 */
+  
+  /* Colors - Accents */
+  --color-primary: #06b6d4; /* Cyan 500 */
+  --color-primary-foreground: #ffffff;
+  --color-primary-hover: #0891b2; /* Cyan 600 */
+  
+  /* Colors - Functional */
+  --color-success: #10b981; /* Emerald 500 */
+  --color-warning: #f59e0b; /* Amber 500 */
+  --color-danger: #ef4444; /* Red 500 */
+  --color-danger-foreground: #ffffff;
+  
+  /* Borders & Surfaces */
+  --color-border: #e2e8f0; /* Slate 200 */
+  --color-input: #e2e8f0;
+  --color-surface: #f8fafc; /* Slate 50 */
+  --color-card: #ffffff;
+  
+  /* Typography */
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+  
+  /* Radius & Spacing */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  
+  /* Focus Ring */
+  --ring-color: rgba(6, 182, 212, 0.4);
 }
 
 * {
@@ -30,13 +41,42 @@ body {
   margin: 0;
 }
 
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+body {
+  color: var(--color-foreground);
+  background: var(--color-surface); /* Slightly off-white for app background */
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-foreground);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
 a {
   color: inherit;
   text-decoration: none;
+  cursor: pointer;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Global utility classes for layout */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Button & Input Reset */
+button, input, select, textarea {
+  font-family: inherit;
 }

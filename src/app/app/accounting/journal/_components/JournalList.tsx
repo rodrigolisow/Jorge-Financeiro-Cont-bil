@@ -2,6 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Loader2, Plus, Search, Eye, RotateCcw, ArrowRight, ArrowLeft } from "lucide-react";
 
 type JournalLine = {
   id: string;
@@ -34,6 +43,23 @@ const formatCurrency = (amount: string) =>
     style: "currency",
     currency: "BRL",
   }).format(Number(amount));
+
+const formatDate = (isoString: string) => {
+  return new Date(isoString).toLocaleDateString("pt-BR", {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "POSTED": return <Badge variant="success">Lançado</Badge>;
+    case "DRAFT": return <Badge variant="secondary">Rascunho</Badge>;
+    case "VOIDED": return <Badge variant="destructive">Anulado</Badge>;
+    default: return <Badge variant="outline">{status}</Badge>;
+  }
+};
 
 export default function JournalList({ canEdit }: JournalListProps) {
   const [filters, setFilters] = useState({
@@ -99,9 +125,9 @@ export default function JournalList({ canEdit }: JournalListProps) {
 
   const reverseEntry = useCallback(
     async (id: string) => {
-      if (!canEdit) {
-        return;
-      }
+      if (!canEdit) return;
+      if (!confirm("Tem certeza que deseja estornar este lançamento? Isso criará um lançamento de reversão.")) return;
+
       setReversingId(id);
       setError(null);
       try {
@@ -135,174 +161,189 @@ export default function JournalList({ canEdit }: JournalListProps) {
   }, [loadEntries]);
 
   return (
-    <main style={{ padding: 32 }}>
-      <header style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>Diário contábil</h1>
-        <div style={{ display: "flex", gap: 12 }}>
-          <Link
-            href="/app/accounting/chart"
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            Plano de contas
-          </Link>
-          {canEdit && (
-            <Link
-              href="/app/accounting/journal/new"
-              style={{
-                padding: "6px 12px",
-                borderRadius: 6,
-                border: "1px solid #222",
-                textDecoration: "none",
-                color: "inherit",
-              }}
-            >
-              Novo lançamento
+    <div className="container mx-auto py-8 space-y-8">
+      <PageHeader
+        title="Diário Contábil"
+        description="Visualize e gerencie todos os lançamentos contábeis (débito e crédito)."
+        action={
+          <div className="flex gap-3">
+            <Link href="/app/accounting/chart">
+              <Button variant="secondary">Ver Plano de Contas</Button>
             </Link>
-          )}
-        </div>
-      </header>
-
-      {!canEdit && <p style={{ marginTop: 8 }}>Acesso somente leitura.</p>}
-      {error && <p style={{ marginTop: 12, color: "crimson" }}>{error}</p>}
-
-      <section style={{ marginTop: 16 }}>
-        <h2>Filtros</h2>
-        <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-          <label>
-            <div>Data de</div>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  startDate: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label>
-            <div>Data até</div>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  endDate: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label>
-            <div>Conta</div>
-            <select
-              value={filters.accountId}
-              onChange={(event) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  accountId: event.target.value,
-                }))
-              }
-            >
-              <option value="">Todas</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.code} - {account.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <section style={{ marginTop: 24 }}>
-        {loading ? (
-          <p>Carregando...</p>
-        ) : items.length === 0 ? (
-          <p>Nenhum lançamento contábil encontrado.</p>
-        ) : (
-          <ul style={{ display: "grid", gap: 16, listStyle: "none" }}>
-            {items.map((entry) => {
-              const debitTotal = entry.lines.reduce(
-                (sum, line) => sum + Number(line.debit),
-                0,
-              );
-
-              return (
-                <li
-                  key={entry.id}
-                  style={{
-                    border: "1px solid #ddd",
-                    borderRadius: 8,
-                    padding: 16,
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <div>
-                      <strong>{entry.date.slice(0, 10)}</strong>
-                      <div>{entry.description ?? "-"}</div>
-                    </div>
-                    <div>{formatCurrency(String(debitTotal))}</div>
-                  </div>
-                  <div style={{ marginTop: 12 }}>
-                    <ul style={{ display: "grid", gap: 8, listStyle: "none" }}>
-                      {entry.lines.map((line) => (
-                        <li key={line.id}>
-                          {line.account.code} - {line.account.name} |{" "}
-                          {line.debit !== "0"
-                            ? `Débito ${formatCurrency(line.debit)}`
-                            : `Crédito ${formatCurrency(line.credit)}`}{" "}
-                          {line.memo ? `- ${line.memo}` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div style={{ marginTop: 8 }}>Status: {entry.status}</div>
-                  <div style={{ marginTop: 8 }}>
-                    <Link href={`/app/accounting/journal/${entry.id}`}>
-                      Ver detalhes
-                    </Link>
-                  </div>
-                  {canEdit && entry.status === "POSTED" && (
-                    <button
-                      type="button"
-                      onClick={() => reverseEntry(entry.id)}
-                      disabled={reversingId === entry.id}
-                      style={{ marginTop: 12 }}
-                    >
-                      Estornar
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-          <button
-            type="button"
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-            disabled={page === 1 || loading}
-          >
-            Anterior
-          </button>
-          <div>
-            Página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))}
+            {canEdit && (
+              <Link href="/app/accounting/journal/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Novo Lançamento
+                </Button>
+              </Link>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              setPage((prev) =>
-                prev < Math.ceil(totalCount / pageSize) ? prev + 1 : prev,
-              )
-            }
-            disabled={page >= Math.ceil(totalCount / pageSize) || loading}
-          >
-            Próxima
-          </button>
+        }
+      />
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-md border border-red-200">
+          {error}
         </div>
-      </section>
-    </main>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Search className="h-5 w-5 text-muted-foreground" />
+            Filtros e Pesquisa
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                label="Data Inicial"
+                type="date"
+                value={filters.startDate}
+                onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+              />
+            </div>
+            <div className="flex-1">
+              <Input
+                label="Data Final"
+                type="date"
+                value={filters.endDate}
+                onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+              />
+            </div>
+            <div className="flex-[2]">
+              <Select
+                label="Filtrar por Conta"
+                value={filters.accountId}
+                onChange={(e) => setFilters(prev => ({ ...prev, accountId: e.target.value }))}
+                options={[
+                  { label: "Todas as contas", value: "" },
+                  ...accounts.map(acc => ({ label: `${acc.code} - ${acc.name}`, value: acc.id }))
+                ]}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        {loading ? (
+          <div className="flex justify-center items-center p-12 text-muted-foreground">
+            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            Carregando lançamentos...
+          </div>
+        ) : items.length === 0 ? (
+          <EmptyState
+            title="Nenhum lançamento encontrado"
+            description="Tente ajustar os filtros ou crie um novo lançamento."
+            action={canEdit ? (
+              <Link href="/app/accounting/journal/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Novo Lançamento
+                </Button>
+              </Link>
+            ) : undefined}
+          />
+        ) : (
+          <div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Descrição / Lançamentos</TableHead>
+                  <TableHead>Valor Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((entry) => {
+                  const debitTotal = entry.lines.reduce(
+                    (sum, line) => sum + Number(line.debit),
+                    0,
+                  );
+
+                  return (
+                    <TableRow key={entry.id} className="align-top">
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {formatDate(entry.date)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium mb-1">{entry.description || "Sem descrição"}</div>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          {entry.lines.map(line => (
+                            <div key={line.id} className="flex gap-2">
+                              <span className={Number(line.debit) > 0 ? "text-emerald-600 font-mono" : "text-amber-600 font-mono"}>
+                                {Number(line.debit) > 0 ? "D" : "C"}
+                              </span>
+                              <span className="font-mono text-xs">{line.account.code}</span>
+                              <span>{line.account.name}</span>
+                              <span className="ml-auto font-mono">
+                                {Number(line.debit) > 0 ? formatCurrency(line.debit) : formatCurrency(line.credit)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono whitespace-nowrap">
+                        {formatCurrency(String(debitTotal))}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(entry.status)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-col gap-2 items-end">
+                          <Link href={`/app/accounting/journal/${entry.id}`}>
+                            <Button variant="ghost" size="sm" className="w-full justify-end">
+                              <Eye className="h-4 w-4 mr-2" /> Detalhes
+                            </Button>
+                          </Link>
+                          {canEdit && entry.status === "POSTED" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 w-full justify-end"
+                              onClick={() => reverseEntry(entry.id)}
+                              isLoading={reversingId === entry.id}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" /> Estornar
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+
+            <div className="p-4 border-t flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">
+                Página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1 || loading}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => p < Math.ceil(totalCount / pageSize) ? p + 1 : p)}
+                  disabled={page >= Math.ceil(totalCount / pageSize) || loading}
+                >
+                  Próxima <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
