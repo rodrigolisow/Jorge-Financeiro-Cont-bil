@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  FINANCE
+  ACCOUNTING
+  VIEWER
+}
+
+enum FinancialTransactionStatus {
+  PLANNED
+  SETTLED
+  CANCELED
+}
+
+enum FinancialTransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum FinancialAccountType {
+  BANK
+  CASH
+  OTHER
+}
+
+enum FinancialCategoryType {
+  INCOME
+  EXPENSE
+}
+
+enum ChartOfAccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+enum JournalEntryStatus {
+  POSTED
+  REVERSED
+}
+
+enum JournalEntrySourceType {
+  MANUAL
+  FINANCIAL
+}
+
+enum AccountingIssueStatus {
+  OPEN
+  RESOLVED
+  IGNORED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkUserId String   @unique
+  role        Role
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  financialTransactions FinancialTransaction[] @relation("FinancialTransactionCreatedBy")
+  accountingIssuesResolved AccountingIssue[] @relation("AccountingIssueResolvedBy")
+  auditLogs AuditLog[]
+  journalEntriesCreated JournalEntry[] @relation("JournalEntryCreatedBy")
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  document  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  financialTransactions FinancialTransaction[]
+  mappingRules MappingRule[] @relation("MappingRuleSupplier")
+
+  @@index([name])
+}
+
+model Property {
+  id        String   @id @default(cuid())
+  name      String
+  code      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  financialTransactions FinancialTransaction[]
+  mappingRules MappingRule[] @relation("MappingRuleProperty")
+
+  @@index([name])
+  @@unique([code])
+}
+
+model FinancialAccount {
+  id        String               @id @default(cuid())
+  name      String
+  type      FinancialAccountType @default(BANK)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  financialTransactions FinancialTransaction[]
+  mappingRules MappingRule[]
+
+  @@index([name])
+}
+
+model FinancialCategory {
+  id        String               @id @default(cuid())
+  name      String
+  type      FinancialCategoryType
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  financialTransactions FinancialTransaction[]
+  mappingRules MappingRule[]
+
+  @@index([name])
+}
+
+model FinancialTransaction {
+  id             String                     @id @default(cuid())
+  type           FinancialTransactionType
+  status         FinancialTransactionStatus @default(PLANNED)
+  amount         Decimal                    @db.Decimal(14, 2)
+  competenceDate DateTime
+  settlementDate DateTime?
+  description    String?
+  accountId      String
+  categoryId     String
+  supplierId     String
+  propertyId     String
+  createdById    String?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  account   FinancialAccount @relation(fields: [accountId], references: [id])
+  category  FinancialCategory @relation(fields: [categoryId], references: [id])
+  supplier  Supplier @relation(fields: [supplierId], references: [id])
+  property  Property @relation(fields: [propertyId], references: [id])
+  createdBy User? @relation("FinancialTransactionCreatedBy", fields: [createdById], references: [id])
+  accountingIssues AccountingIssue[]
+
+  @@index([competenceDate])
+  @@index([settlementDate])
+  @@index([status])
+  @@index([supplierId])
+  @@index([propertyId])
+  @@index([categoryId])
+  @@index([accountId])
+}
+
+model ChartOfAccount {
+  id        String            @id @default(cuid())
+  code      String            @unique
+  name      String
+  type      ChartOfAccountType
+  parentId  String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  parent   ChartOfAccount? @relation("ChartOfAccountHierarchy", fields: [parentId], references: [id])
+  children ChartOfAccount[] @relation("ChartOfAccountHierarchy")
+  journalLines JournalLine[]
+  debitMappingRules MappingRule[] @relation("MappingRuleDebitAccount")
+  creditMappingRules MappingRule[] @relation("MappingRuleCreditAccount")
+
+  @@index([name])
+}
+
+model JournalEntry {
+  id          String                 @id @default(cuid())
+  date        DateTime
+  description String?
+  status      JournalEntryStatus     @default(POSTED)
+  sourceType  JournalEntrySourceType
+  sourceId    String?
+  createdById String?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  createdBy User? @relation("JournalEntryCreatedBy", fields: [createdById], references: [id])
+  lines JournalLine[]
+
+  @@index([date])
+  @@index([status])
+  @@unique([sourceType, sourceId])
+}
+
+model JournalLine {
+  id        String   @id @default(cuid())
+  entryId   String
+  accountId String
+  debit     Decimal  @default(0) @db.Decimal(14, 2)
+  credit    Decimal  @default(0) @db.Decimal(14, 2)
+  memo      String?
+
+  entry   JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account ChartOfAccount @relation(fields: [accountId], references: [id])
+
+  @@index([entryId])
+  @@index([accountId])
+}
+
+model MappingRule {
+  id                  String   @id @default(cuid())
+  financialCategoryId String
+  financialAccountId  String
+  supplierId          String?
+  propertyId          String?
+  debitAccountId      String
+  creditAccountId     String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  financialCategory FinancialCategory @relation(fields: [financialCategoryId], references: [id])
+  financialAccount FinancialAccount @relation(fields: [financialAccountId], references: [id])
+  supplier Supplier? @relation("MappingRuleSupplier", fields: [supplierId], references: [id])
+  property Property? @relation("MappingRuleProperty", fields: [propertyId], references: [id])
+  debitAccount ChartOfAccount @relation("MappingRuleDebitAccount", fields: [debitAccountId], references: [id])
+  creditAccount ChartOfAccount @relation("MappingRuleCreditAccount", fields: [creditAccountId], references: [id])
+
+  @@index([financialCategoryId, financialAccountId])
+  @@unique([financialCategoryId, financialAccountId, supplierId, propertyId])
+}
+
+model AccountingIssue {
+  id                     String                @id @default(cuid())
+  status                 AccountingIssueStatus @default(OPEN)
+  reason                 String
+  details                Json?
+  financialTransactionId String
+  resolvedAt             DateTime?
+  resolvedById           String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  financialTransaction FinancialTransaction @relation(fields: [financialTransactionId], references: [id])
+  resolvedBy User? @relation("AccountingIssueResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([status])
+  @@index([financialTransactionId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  actorUserId String?
+  createdAt  DateTime @default(now())
+
+  actorUser User? @relation(fields: [actorUserId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorUserId])
+}
