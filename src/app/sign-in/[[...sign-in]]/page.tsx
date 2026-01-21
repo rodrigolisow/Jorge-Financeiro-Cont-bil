@@ -11,7 +11,7 @@ export default function SignInPage() {
         backgroundColor: "var(--color-surface)",
       }}
     >
-      <SignIn />
+      <SignIn forceRedirectUrl="/app" />
     </div>
   );
 }

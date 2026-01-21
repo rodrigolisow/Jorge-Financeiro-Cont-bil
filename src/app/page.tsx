@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Button } from "@/components/ui/Button";
@@ -6,6 +7,11 @@ import { LayoutDashboard } from "lucide-react";
 
 export default async function Home() {
   const { userId } = await auth();
+
+  // Se o usuário já está logado, redireciona direto para o dashboard
+  if (userId) {
+    redirect("/app");
+  }
 
   return (
     <div className={styles.main}>
@@ -17,9 +23,9 @@ export default async function Home() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href={userId ? "/app" : "/sign-in"}>
+            <Link href="/sign-in">
               <Button className={styles.ctaButton}>
-                {userId ? "Ir para Dashboard" : "Entrar"}
+                Entrar
               </Button>
             </Link>
           </div>
