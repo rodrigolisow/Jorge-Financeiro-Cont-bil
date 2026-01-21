@@ -185,6 +185,8 @@
 .pageContent {
     flex: 1;
     overflow-y: auto;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .overlay {

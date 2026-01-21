@@ -6,10 +6,11 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Plus, Pencil, Trash2, X, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Save, AlertCircle } from "lucide-react";
+import styles from "./CrudPage.module.css";
 
 type Option = {
   label: string;
@@ -31,6 +32,7 @@ type Item = {
 
 type CrudPageProps = {
   title: string;
+  description?: string;
   endpoint: string;
   fields: Field[];
   canEdit: boolean;
@@ -59,6 +61,7 @@ const normalizePayload = (data: Record<string, string>, fields: Field[]) =>
 
 export default function CrudPage({
   title,
+  description,
   endpoint,
   fields,
   canEdit,
@@ -137,9 +140,7 @@ export default function CrudPage({
 
   const handleUpdate = async (event: FormEvent) => {
     event.preventDefault();
-    if (!editingId) {
-      return;
-    }
+    if (!editingId) return;
     setSaving(true);
     setError(null);
     try {
@@ -164,13 +165,10 @@ export default function CrudPage({
 
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja remover este item?")) return;
-
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(`${endpoint}/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(`${endpoint}/${id}`, { method: "DELETE" });
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload?.error?.message ?? "Erro ao remover");
@@ -183,84 +181,86 @@ export default function CrudPage({
     }
   };
 
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className={styles.container}>
       <PageHeader
         title={title}
-        description={`Gerenciamento de ${title.toLowerCase()}`}
+        description={description ?? `Gerenciamento de ${title.toLowerCase()}`}
         action={
           canEdit && !creating && (
-            <Button onClick={() => setCreating(true)}>
-              <Plus size={16} className="mr-2" /> Novo
+            <Button variant="primary" onClick={() => setCreating(true)}>
+              <Plus size={18} /> Novo
             </Button>
           )
         }
       />
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-          {error}
+        <div className={styles.alert}>
+          <AlertCircle size={18} /> {error}
         </div>
       )}
 
       {creating && canEdit && (
-        <Card className="animate-in fade-in slide-in-from-top-4 duration-200">
+        <Card className={styles.createCard}>
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <CardTitle>Novo Cadastro</CardTitle>
-              <Button size="sm" variant="ghost" onClick={() => setCreating(false)}><X size={16} /></Button>
+              <Button size="sm" variant="ghost" onClick={() => setCreating(false)}>
+                <X size={18} />
+              </Button>
             </div>
           </CardHeader>
           <form onSubmit={handleCreate}>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent>
+              <div className={styles.formGrid}>
                 {fields.map((field) => (
                   <div key={field.name}>
                     {field.type === "select" ? (
                       <Select
                         label={field.label}
                         value={formData[field.name]}
-                        onChange={(event) =>
-                          handleChange(setFormData, field, event.target.value)
-                        }
+                        onChange={(e) => handleChange(setFormData, field, e.target.value)}
                         options={field.options}
                         disabled={saving}
                       />
                     ) : (
                       <Input
                         label={field.label}
-                        type="text"
                         value={formData[field.name]}
-                        onChange={(event) =>
-                          handleChange(setFormData, field, event.target.value)
-                        }
+                        onChange={(e) => handleChange(setFormData, field, e.target.value)}
                         disabled={saving}
                       />
                     )}
                   </div>
                 ))}
               </div>
+              <div className={styles.formFooter}>
+                <Button type="button" variant="secondary" onClick={() => setCreating(false)} disabled={saving}>
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="primary" isLoading={saving}>
+                  <Save size={16} /> Salvar
+                </Button>
+              </div>
             </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setCreating(false)} disabled={saving}>
-                Cancelar
-              </Button>
-              <Button type="submit" variant="primary" isLoading={saving}>
-                Salvar
-              </Button>
-            </CardFooter>
           </form>
         </Card>
       )}
 
       <Card>
         {loading ? (
-          <div className="p-8 text-center text-muted-foreground">Carregando...</div>
+          <div className={styles.loadingState}>Carregando...</div>
         ) : items.length === 0 ? (
-          <div className="p-2">
+          <div style={{ padding: '0.5rem' }}>
             <EmptyState
               title={`Nenhum ${title.toLowerCase().slice(0, -1)} encontrado`}
-              description="Comece criando um novo registro no botão acima."
+              description="Comece criando um novo registro."
               actionLabel={canEdit && !creating ? "Criar Novo" : undefined}
               onAction={() => setCreating(true)}
             />
@@ -272,93 +272,65 @@ export default function CrudPage({
                 {fields.map((field) => (
                   <TableHead key={field.name}>{field.label}</TableHead>
                 ))}
-                {canEdit && <TableHead className="w-[100px] text-right">Ações</TableHead>}
+                {canEdit && <TableHead style={{ width: 100, textAlign: 'right' }}>Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} className={styles.tableRow}>
                   {editingId === item.id ? (
-                    <>
-                      <TableCell colSpan={fields.length + (canEdit ? 1 : 0)}>
-                        <form onSubmit={handleUpdate} className="flex gap-4 items-end">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 flex-1">
-                            {fields.map((field) => (
-                              <div key={field.name}>
-                                {field.type === "select" ? (
-                                  <Select
-                                    value={editData[field.name] ?? ""}
-                                    onChange={(event) =>
-                                      handleChange(
-                                        setEditData,
-                                        field,
-                                        event.target.value,
-                                      )
-                                    }
-                                    options={field.options}
-                                    disabled={saving}
-                                  />
-                                ) : (
-                                  <Input
-                                    value={editData[field.name] ?? ""}
-                                    onChange={(event) =>
-                                      handleChange(
-                                        setEditData,
-                                        field,
-                                        event.target.value,
-                                      )
-                                    }
-                                    disabled={saving}
-                                  />
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button type="submit" size="sm" variant="success" isLoading={saving}>
-                              <Save size={16} />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditingId(null);
-                                setEditData({});
-                              }}
-                              disabled={saving}
-                            >
-                              <X size={16} />
-                            </Button>
-                          </div>
-                        </form>
-                      </TableCell>
-                    </>
+                    <TableCell colSpan={fields.length + (canEdit ? 1 : 0)}>
+                      <form onSubmit={handleUpdate} className={styles.editRow}>
+                        <div className={styles.editFields}>
+                          {fields.map((field) => (
+                            <div key={field.name}>
+                              {field.type === "select" ? (
+                                <Select
+                                  value={editData[field.name] ?? ""}
+                                  onChange={(e) => handleChange(setEditData, field, e.target.value)}
+                                  options={field.options}
+                                  disabled={saving}
+                                />
+                              ) : (
+                                <Input
+                                  value={editData[field.name] ?? ""}
+                                  onChange={(e) => handleChange(setEditData, field, e.target.value)}
+                                  disabled={saving}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className={styles.editButtons}>
+                          <Button type="submit" size="sm" variant="success" isLoading={saving}>
+                            <Save size={16} />
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
+                            <X size={16} />
+                          </Button>
+                        </div>
+                      </form>
+                    </TableCell>
                   ) : (
                     <>
                       {fields.map((field) => (
                         <TableCell key={field.name}>
-                          {item[field.name] ?? <span className="text-muted-foreground">-</span>}
+                          {item[field.name] ?? <span style={{ color: '#94a3b8' }}>—</span>}
                         </TableCell>
                       ))}
                       {canEdit && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => startEdit(item)}
-                              title="Editar"
-                            >
+                        <TableCell style={{ textAlign: 'right' }}>
+                          <div className={styles.tableActions}>
+                            <Button size="sm" variant="ghost" onClick={() => startEdit(item)} title="Editar">
                               <Pencil size={14} />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
                               onClick={() => handleDelete(item.id)}
                               disabled={saving}
                               title="Remover"
+                              style={{ color: '#ef4444' }}
                             >
                               <Trash2 size={14} />
                             </Button>

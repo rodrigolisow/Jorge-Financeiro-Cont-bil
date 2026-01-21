@@ -1,8 +1,6 @@
 .tableContainer {
     width: 100%;
     overflow-x: auto;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
 }
 
 .table {
@@ -13,13 +11,12 @@
 }
 
 .header {
-    border-bottom: 1px solid var(--color-border);
-    background-color: var(--color-surface);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .row {
-    border-bottom: 1px solid var(--color-border);
-    transition: background-color 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.15s ease;
 }
 
 .row:last-child {
@@ -27,19 +24,23 @@
 }
 
 .row:hover {
-    background-color: var(--color-surface);
+    background-color: #fafafa;
 }
 
 .headCell {
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1rem;
     text-align: left;
     font-weight: 600;
-    color: var(--color-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
     vertical-align: middle;
+    white-space: nowrap;
 }
 
 .cell {
-    padding: 0.75rem 1rem;
+    padding: 1rem;
     vertical-align: middle;
-    color: var(--color-foreground);
+    color: #1e293b;
 }

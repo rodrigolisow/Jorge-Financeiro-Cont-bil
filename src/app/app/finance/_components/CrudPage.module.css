@@ -1,0 +1,87 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 1px solid #fecaca;
+    border-radius: 0.75rem;
+    color: #dc2626;
+    font-size: 0.9375rem;
+    font-weight: 500;
+}
+
+.createCard {
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.formFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.loadingState {
+    padding: 3rem;
+    text-align: center;
+    color: #64748b;
+    font-size: 1rem;
+}
+
+.tableActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+}
+
+.tableRow:hover .tableActions {
+    opacity: 1;
+}
+
+.editRow {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.editFields {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.editButtons {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
